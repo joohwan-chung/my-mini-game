@@ -1,3 +1,5 @@
+'use client'
+
 import GameNavigation from '@/components/GameNavigation';
 import { useCallback, useEffect } from 'react';
 
