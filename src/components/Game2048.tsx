@@ -178,28 +178,38 @@ const Game2048 = () => {
   }, [move]);
 
   // 터치 이벤트 처리
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    setTouchStart([touch.clientX, touch.clientY]);
-  };
+  useEffect(() => {
+    const handleGlobalTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      setTouchStart([touch.clientX, touch.clientY]);
+    };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStart) return;
-    
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStart[0];
-    const deltaY = touch.clientY - touchStart[1];
-    
-    if (Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) return;
+    const handleGlobalTouchEnd = (e: TouchEvent) => {
+      if (!touchStart) return;
+      
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStart[0];
+      const deltaY = touch.clientY - touchStart[1];
+      
+      if (Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) return;
 
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      move(deltaX > 0 ? 'right' : 'left');
-    } else {
-      move(deltaY > 0 ? 'down' : 'up');
-    }
-    
-    setTouchStart(null);
-  };
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        move(deltaX > 0 ? 'right' : 'left');
+      } else {
+        move(deltaY > 0 ? 'down' : 'up');
+      }
+      
+      setTouchStart(null);
+    };
+
+    document.addEventListener('touchstart', handleGlobalTouchStart);
+    document.addEventListener('touchend', handleGlobalTouchEnd);
+
+    return () => {
+      document.removeEventListener('touchstart', handleGlobalTouchStart);
+      document.removeEventListener('touchend', handleGlobalTouchEnd);
+    };
+  }, [move, touchStart]);
 
   // 마우스 이벤트 처리 추가
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -230,8 +240,6 @@ const Game2048 = () => {
   return (
     <div 
       className="flex flex-col items-center justify-center w-full max-w-md mx-auto"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
