@@ -1,8 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ReactConfetti from 'react-confetti';
 
 type Board = number[][];
+type GameStatus = 'playing' | 'won' | 'lost';
 
 // colors 객체의 타입 정의
 type ColorMap = {
@@ -33,6 +35,36 @@ const addNewNumber = (board: Board): Board => {
   return newBoard;
 };
 
+// Modal 컴포넌트
+const GameModal = ({ status, onRestart }: { status: GameStatus; onRestart: () => void }) => {
+  if (status === 'playing') return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl text-center">
+        {status === 'won' ? (
+          <>
+            <h2 className="text-2xl font-bold mb-4">축하합니다! 🎉</h2>
+            <p className="mb-4">2048을 달성하셨습니다!</p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-2xl font-bold mb-4">게임 오버 😢</h2>
+            <p className="mb-4">더 이상 이동할 수 없습니다.</p>
+            <p className="mb-4">3초 후 자동으로 재시작됩니다.</p>
+          </>
+        )}
+        <button
+          onClick={onRestart}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          다시 시작하기
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const Game2048 = () => {
   const [board, setBoard] = useState<Board>(() => {
     const initialBoard = Array(4).fill(0).map(() => Array(4).fill(0));
@@ -43,6 +75,8 @@ const Game2048 = () => {
   const [mouseStart, setMouseStart] = useState<[number, number] | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const boardRef = useRef<HTMLDivElement>(null);
+  const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
   const colors: ColorMap = {
     2: 'bg-[#eee4da]',
@@ -106,9 +140,54 @@ const Game2048 = () => {
     return newBoard;
   };
 
-  // 이동 처리 개선
+  // 게임 상태 체크 함수
+  const checkGameStatus = useCallback((currentBoard: Board) => {
+    // 2048 달성 체크
+    const has2048 = currentBoard.some(row => row.some(cell => cell === 2048));
+    if (has2048) {
+      setGameStatus('won');
+      return;
+    }
+
+    // 더 이상 이동 가능한지 체크
+    const canMove = (board: Board) => {
+      // 빈 칸이 있는지 확인
+      if (findEmptyCells(board).length > 0) return true;
+
+      // 인접한 셀과 같은 값이 있는지 확인
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+          const current = board[i][j];
+          if (
+            (i < 3 && board[i + 1][j] === current) ||
+            (j < 3 && board[i][j + 1] === current)
+          ) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    if (!canMove(currentBoard)) {
+      setGameStatus('lost');
+      setTimeout(() => {
+        handleRestart();
+      }, 3000);
+    }
+  }, []);
+
+  // 게임 재시작 함수
+  const handleRestart = useCallback(() => {
+    const initialBoard = Array(4).fill(0).map(() => Array(4).fill(0));
+    setBoard(addNewNumber(addNewNumber(initialBoard)));
+    setScore(0);
+    setGameStatus('playing');
+  }, []);
+
+  // move 함수 수정
   const move = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-    if (isAnimating) return;
+    if (isAnimating || gameStatus !== 'playing') return;
     setIsAnimating(true);
 
     const rotations = {
@@ -139,19 +218,17 @@ const Game2048 = () => {
     newBoard = rotateBoard(mergedBoard, (4 - rotations[direction]) % 4);
 
     if (hasChanged) {
-      // 상태 업데이트를 한 번에 처리
-      setBoard(prevBoard => {
-        const boardWithNewNumber = addNewNumber(newBoard);
-        return boardWithNewNumber;
-      });
+      const newBoardWithNumber = addNewNumber(newBoard);
+      setBoard(newBoardWithNumber);
       setScore(prev => prev + totalScore);
+      checkGameStatus(newBoardWithNumber);
     }
 
     // 애니메이션 상태 리셋
     setTimeout(() => {
       setIsAnimating(false);
     }, 150);
-  }, [board, isAnimating]);
+  }, [isAnimating, gameStatus, board, checkGameStatus]);
 
   // 키 타입 정의
   type ArrowKey = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
@@ -237,41 +314,61 @@ const Game2048 = () => {
     setMouseStart(null);
   };
 
+  useEffect(() => {
+    setWindowSize({
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+  }, []);
+
   return (
-    <div 
-      className="flex flex-col items-center justify-center w-full max-w-md mx-auto"
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
-      ref={boardRef}
-    >
-      <div className="mb-4">
-        <h1 className="text-4xl font-bold mb-2">2048</h1>
-        <div className="text-xl">점수: {score}</div>
-      </div>
+    <div className="relative">
+      {gameStatus === 'won' && (
+        <ReactConfetti
+          width={windowSize.width}
+          height={windowSize.height}
+          recycle={false}
+          numberOfPieces={200}
+        />
+      )}
       
-      <div className="bg-gray-300 p-4 rounded-lg">
-        {board.map((row, rowIndex) => (
-          <div 
-            key={`row-${rowIndex}-${row.join('-')}`} 
-            className="flex"
-          >
-            {row.map((cell, colIndex) => (
-              <div
-                key={`cell-${rowIndex}-${colIndex}-${cell}`}
-                className={`
-                  w-16 h-16 m-1 flex items-center justify-center
-                  rounded-lg text-2xl font-bold
-                  ${getColor(cell)} ${getTextColor(cell)}
-                  transform transition-all duration-150 ease-in-out
-                  ${isAnimating ? 'scale-95' : 'scale-100'}
-                `}
-              >
-                {cell !== 0 && cell}
-              </div>
-            ))}
-          </div>
-        ))}
+      <GameModal status={gameStatus} onRestart={handleRestart} />
+      
+      <div 
+        className="flex flex-col items-center justify-center w-full max-w-md mx-auto"
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        ref={boardRef}
+      >
+        <div className="mb-4">
+          <h1 className="text-4xl font-bold mb-2">2048</h1>
+          <div className="text-xl">점수: {score}</div>
+        </div>
+        
+        <div className="bg-gray-300 p-4 rounded-lg">
+          {board.map((row, rowIndex) => (
+            <div 
+              key={`row-${rowIndex}-${row.join('-')}`} 
+              className="flex"
+            >
+              {row.map((cell, colIndex) => (
+                <div
+                  key={`cell-${rowIndex}-${colIndex}-${cell}`}
+                  className={`
+                    w-16 h-16 m-1 flex items-center justify-center
+                    rounded-lg text-2xl font-bold
+                    ${getColor(cell)} ${getTextColor(cell)}
+                    transform transition-all duration-150 ease-in-out
+                    ${isAnimating ? 'scale-95' : 'scale-100'}
+                  `}
+                >
+                  {cell !== 0 && cell}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
