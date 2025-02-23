@@ -15,7 +15,7 @@ Next.js 프레임워크를 활용하여 제작되었습니다.
 
 1. 저장소 클론
 ```bash
-git clone [repository-url]
+git clone https://github.com/joohwan-chung/my-mini-game.git
 ```
 
 2. 패키지 설치
