@@ -36,6 +36,11 @@ type Explosion = Position & {
   duration: number;
 };
 
+type GameSize = {
+  width: number;
+  height: number;
+};
+
 const GAME_WIDTH = 800;
 const GAME_HEIGHT = 600;
 const PLAYER_WIDTH = 50;
@@ -52,11 +57,30 @@ const DEFAULT_EXPLOSION_EMOJI = '💥';
 
 const Galaga = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [gameSize, setGameSize] = useState<GameSize>({ width: 800, height: 600 });
+  
+  // 게임 요소 크기 계산 함수
+  const calculateSizes = (width: number, height: number) => {
+    const scale = Math.min(width / 800, height / 600);
+    return {
+      playerWidth: 50 * scale,
+      playerHeight: 50 * scale,
+      bulletWidth: 4 * scale,
+      bulletHeight: 10 * scale,
+      enemyWidth: 40 * scale,
+      enemyHeight: 40 * scale,
+      playerSpeed: 15 * scale
+    };
+  };
+
+  const sizes = calculateSizes(gameSize.width, gameSize.height);
+
   const [player, setPlayer] = useState<Player>({
-    x: GAME_WIDTH / 2 - PLAYER_WIDTH / 2,
-    y: GAME_HEIGHT - PLAYER_HEIGHT - 10,
-    width: PLAYER_WIDTH,
-    height: PLAYER_HEIGHT,
+    x: gameSize.width / 2 - sizes.playerWidth / 2,
+    y: gameSize.height - sizes.playerHeight - 10,
+    width: sizes.playerWidth,
+    height: sizes.playerHeight,
     lives: 3,
     emoji: '🚀'
   });
@@ -162,10 +186,10 @@ const Galaga = () => {
     setBullets([]);
     setExplosions([]);
     setPlayer({
-      x: GAME_WIDTH / 2 - PLAYER_WIDTH / 2,
-      y: GAME_HEIGHT - PLAYER_HEIGHT - 10,
-      width: PLAYER_WIDTH,
-      height: PLAYER_HEIGHT,
+      x: gameSize.width / 2 - sizes.playerWidth / 2,
+      y: gameSize.height - sizes.playerHeight - 10,
+      width: sizes.playerWidth,
+      height: sizes.playerHeight,
       lives: 3,
       emoji: '🚀'
     });
@@ -176,8 +200,8 @@ const Galaga = () => {
     if (!enemy.isAttacking) {
       // 제자리에서 약간의 움직임
       return {
-        x: enemy.initialX + Math.sin(Date.now() / 1000) * 5,
-        y: enemy.initialY + Math.sin(Date.now() / 1500) * 3
+        x: enemy.initialX + Math.sin(Date.now() / 1000) * (gameSize.width * 0.01), // 화면 크기에 비례한 움직임
+        y: enemy.initialY + Math.sin(Date.now() / 1500) * (gameSize.height * 0.01)
       };
     }
 
@@ -185,18 +209,18 @@ const Galaga = () => {
     const attackPatterns = [
       // 패턴 1: S자 곡선으로 플레이어 추적
       (progress: number) => ({
-        x: enemy.initialX + Math.sin(progress * Math.PI * 2) * 200,
-        y: enemy.initialY + (GAME_HEIGHT - enemy.initialY) * progress
+        x: enemy.initialX + Math.sin(progress * Math.PI * 2) * (gameSize.width * 0.25),
+        y: enemy.initialY + (player.y - enemy.initialY + sizes.playerHeight) * progress
       }),
       // 패턴 2: 원형 곡선으로 플레이어 추적
       (progress: number) => ({
-        x: enemy.initialX + Math.cos(progress * Math.PI * 2) * 150,
-        y: enemy.initialY + (GAME_HEIGHT - enemy.initialY) * Math.pow(progress, 2)
+        x: enemy.initialX + Math.cos(progress * Math.PI * 2) * (gameSize.width * 0.2),
+        y: enemy.initialY + (player.y - enemy.initialY + sizes.playerHeight) * Math.pow(progress, 1.5)
       }),
       // 패턴 3: 직선으로 플레이어 추적
       (progress: number) => ({
         x: enemy.initialX + (player.x - enemy.initialX) * progress,
-        y: enemy.initialY + (GAME_HEIGHT - enemy.initialY) * progress
+        y: enemy.initialY + (player.y - enemy.initialY + sizes.playerHeight) * progress
       })
     ];
 
@@ -239,7 +263,7 @@ const Galaga = () => {
       setEnemies(prev => {
         const movedEnemies = prev.map(enemy => {
           if (enemy.isAttacking) {
-            const newProgress = enemy.pathProgress + 0.01;
+            const newProgress = enemy.pathProgress + (0.01 * (gameSize.height / 600)); // 화면 크기에 비례한 속도
             if (newProgress >= 1) {
               return {
                 ...enemy,
@@ -282,7 +306,7 @@ const Galaga = () => {
               x: newPos.x,
               y: newPos.y
             };
-          } else if (Math.random() < 0.002) { // 공격 확률 증가
+          } else if (Math.random() < 0.002 * (gameSize.height / 600)) { // 화면 크기에 비례한 공격 확률
             return {
               ...enemy,
               isAttacking: true,
@@ -356,7 +380,7 @@ const Galaga = () => {
     }, 1000 / 60);
 
     return () => clearInterval(gameLoop);
-  }, [gameStarted, gameOver, stage, bullets, enemies, player]);
+  }, [gameStarted, gameOver, stage, bullets, enemies, player, gameSize, sizes]);
 
   // 키보드 입력 처리
   useEffect(() => {
@@ -367,22 +391,22 @@ const Galaga = () => {
         case 'ArrowLeft':
           setPlayer(prev => ({
             ...prev,
-            x: Math.max(0, prev.x - PLAYER_SPEED)
+            x: Math.max(0, prev.x - sizes.playerSpeed)
           }));
           break;
         case 'ArrowRight':
           setPlayer(prev => ({
             ...prev,
-            x: Math.min(GAME_WIDTH - PLAYER_WIDTH, prev.x + PLAYER_SPEED)
+            x: Math.min(gameSize.width - sizes.playerWidth, prev.x + sizes.playerSpeed)
           }));
           break;
         case ' ':
           setBullets(prev => [...prev, {
-            x: player.x + PLAYER_WIDTH / 2 - BULLET_WIDTH / 2,
+            x: player.x + sizes.playerWidth / 2 - sizes.bulletWidth / 2,
             y: player.y,
-            width: BULLET_WIDTH,
-            height: BULLET_HEIGHT,
-            speed: 10,
+            width: sizes.bulletWidth,
+            height: sizes.bulletHeight,
+            speed: 10 * (gameSize.height / 600),
             emoji: DEFAULT_BULLET_EMOJI
           }]);
           break;
@@ -391,7 +415,91 @@ const Galaga = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameStarted, gameOver, player.x, player.y]);
+  }, [gameStarted, gameOver, player.x, player.y, gameSize, sizes]);
+
+  // 화면 크기 변경 감지 및 처리
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const container = containerRef.current;
+        const maxWidth = Math.min(window.innerWidth - 32, 1200); // 패딩 고려
+        const maxHeight = window.innerHeight - 200; // 상단 UI 공간 고려
+        const aspectRatio = 4/3;
+        
+        let width = maxWidth;
+        let height = width / aspectRatio;
+        
+        if (height > maxHeight) {
+          height = maxHeight;
+          width = height * aspectRatio;
+        }
+        
+        setGameSize({ width, height });
+        
+        // 플레이어 위치 재조정
+        const newSizes = calculateSizes(width, height);
+        setPlayer(prev => ({
+          ...prev,
+          width: newSizes.playerWidth,
+          height: newSizes.playerHeight,
+          x: Math.min(width - newSizes.playerWidth, prev.x * (width / gameSize.width)),
+          y: height - newSizes.playerHeight - 10
+        }));
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // 터치 컨트롤 처리
+  useEffect(() => {
+    if (!gameStarted || gameOver) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      if (!touch) return;
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      
+      setPlayer(prev => ({
+        ...prev,
+        x: Math.max(0, Math.min(gameSize.width - sizes.playerWidth, x - sizes.playerWidth / 2))
+      }));
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      // 터치할 때마다 총알 발사
+      setBullets(prev => [...prev, {
+        x: player.x + sizes.playerWidth / 2 - sizes.bulletWidth / 2,
+        y: player.y,
+        width: sizes.bulletWidth,
+        height: sizes.bulletHeight,
+        speed: 10 * (gameSize.height / 600), // 화면 크기에 비례한 속도
+        emoji: DEFAULT_BULLET_EMOJI
+      }]);
+    };
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.addEventListener('touchmove', handleTouchMove);
+      canvas.addEventListener('touchstart', handleTouchStart);
+    }
+
+    return () => {
+      if (canvas) {
+        canvas.removeEventListener('touchmove', handleTouchMove);
+        canvas.removeEventListener('touchstart', handleTouchStart);
+      }
+    };
+  }, [gameStarted, gameOver, player.x, player.y, gameSize, sizes]);
 
   // 렌더링
   useEffect(() => {
@@ -402,18 +510,18 @@ const Galaga = () => {
     if (!ctx) return;
 
     // 캔버스 클리어
-    ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    ctx.clearRect(0, 0, gameSize.width, gameSize.height);
 
     // 배경
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    ctx.fillRect(0, 0, gameSize.width, gameSize.height);
 
     if (gameStarted && !gameOver) {
       // 플레이어 이모지 그리기
-      ctx.font = `${PLAYER_HEIGHT}px Arial`;
+      ctx.font = `${sizes.playerHeight}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(player.emoji, player.x + PLAYER_WIDTH/2, player.y + PLAYER_HEIGHT/2);
+      ctx.fillText(player.emoji, player.x + sizes.playerWidth/2, player.y + sizes.playerHeight/2);
 
       // 총알 그리기
       ctx.fillStyle = '#fff';
@@ -423,8 +531,8 @@ const Galaga = () => {
 
       // 적 이모지 그리기
       enemies.forEach(enemy => {
-        ctx.font = `${enemy.height}px Arial`;
-        ctx.fillText(enemy.emoji, enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+        ctx.font = `${sizes.enemyHeight}px Arial`;
+        ctx.fillText(enemy.emoji, enemy.x + sizes.enemyWidth/2, enemy.y + sizes.enemyHeight/2);
       });
 
       // 폭발 효과 그리기
@@ -432,10 +540,10 @@ const Galaga = () => {
         ctx.fillText(DEFAULT_EXPLOSION_EMOJI, exp.x, exp.y);
       });
     }
-  }, [gameStarted, gameOver, player, bullets, enemies, explosions]);
+  }, [gameStarted, gameOver, player, bullets, enemies, explosions, gameSize, sizes]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4">
+    <div ref={containerRef} className="flex flex-col items-center justify-center min-h-screen bg-gray-900 p-4">
       <div className="text-white mb-4">
         <div className="text-2xl">점수: {score}</div>
         <div>스테이지: {stage}</div>
@@ -443,9 +551,13 @@ const Galaga = () => {
       </div>
       <canvas
         ref={canvasRef}
-        width={GAME_WIDTH}
-        height={GAME_HEIGHT}
-        className="border-4 border-white"
+        width={gameSize.width}
+        height={gameSize.height}
+        className="border-4 border-white rounded-lg"
+        style={{
+          maxWidth: '100%',
+          touchAction: 'none'
+        }}
       />
       {!gameStarted || gameOver ? (
         <div className="mt-4">
@@ -459,8 +571,9 @@ const Galaga = () => {
       ) : null}
       <div className="mt-4 text-white text-center">
         <p>조작 방법:</p>
-        <p>← → : 이동</p>
-        <p>스페이스바 : 발사</p>
+        <p className="hidden md:block">← → : 이동</p>
+        <p className="hidden md:block">스페이스바 : 발사</p>
+        <p className="md:hidden">터치로 이동 및 발사</p>
       </div>
     </div>
   );

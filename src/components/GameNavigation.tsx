@@ -21,6 +21,11 @@ const games: GameMenu[] = [
     path: '/games/galaga',
     description: '적 우주선을 물리치세요!'
   },
+  {
+    name: '오목',
+    path: '/games/gomoku',
+    description: '5개의 돌을 연속으로 놓아 승리하세요!'
+  },
   // 추후 다른 게임들을 여기에 추가할 수 있습니다
 ];
 

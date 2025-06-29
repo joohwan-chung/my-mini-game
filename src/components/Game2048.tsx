@@ -66,17 +66,37 @@ const GameModal = ({ status, onRestart }: { status: GameStatus; onRestart: () =>
 };
 
 const Game2048 = () => {
-  const [board, setBoard] = useState<Board>(() => {
+  const getInitialBoard = (): Board => {
     const initialBoard = Array(4).fill(0).map(() => Array(4).fill(0));
     return addNewNumber(addNewNumber(initialBoard));
-  });
-  const [score, setScore] = useState<number>(0);
-  const [touchStart, setTouchStart] = useState<[number, number] | null>(null);
+  };
+
+  const [board, setBoard] = useState<Board>(getInitialBoard());
+  const [score, setScore] = useState(0);
+  const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
   const [mouseStart, setMouseStart] = useState<[number, number] | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const boardRef = useRef<HTMLDivElement>(null);
-  const [gameStatus, setGameStatus] = useState<GameStatus>('playing');
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [cellSize, setCellSize] = useState(64); // 기본 셀 크기
+
+  // 화면 크기에 따른 셀 크기 조정
+  useEffect(() => {
+    const updateCellSize = () => {
+      if (boardRef.current) {
+        const containerWidth = boardRef.current.offsetWidth;
+        const maxCellSize = Math.min(
+          (containerWidth - 32) / 4, // 패딩과 마진 고려
+          80 // 최대 셀 크기
+        );
+        setCellSize(maxCellSize);
+      }
+    };
+
+    updateCellSize();
+    window.addEventListener('resize', updateCellSize);
+    return () => window.removeEventListener('resize', updateCellSize);
+  }, []);
 
   const colors: ColorMap = {
     2: 'bg-[#eee4da]',
@@ -258,15 +278,15 @@ const Game2048 = () => {
   useEffect(() => {
     const handleGlobalTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
-      setTouchStart([touch.clientX, touch.clientY]);
+      setMouseStart([touch.clientX, touch.clientY]);
     };
 
     const handleGlobalTouchEnd = (e: TouchEvent) => {
-      if (!touchStart) return;
+      if (!mouseStart) return;
       
       const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - touchStart[0];
-      const deltaY = touch.clientY - touchStart[1];
+      const deltaX = touch.clientX - mouseStart[0];
+      const deltaY = touch.clientY - mouseStart[1];
       
       if (Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) return;
 
@@ -276,7 +296,7 @@ const Game2048 = () => {
         move(deltaY > 0 ? 'down' : 'up');
       }
       
-      setTouchStart(null);
+      setMouseStart(null);
     };
 
     document.addEventListener('touchstart', handleGlobalTouchStart);
@@ -286,7 +306,7 @@ const Game2048 = () => {
       document.removeEventListener('touchstart', handleGlobalTouchStart);
       document.removeEventListener('touchend', handleGlobalTouchEnd);
     };
-  }, [move, touchStart]);
+  }, [move, mouseStart]);
 
   // 마우스 이벤트 처리 추가
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -335,13 +355,34 @@ const Game2048 = () => {
       <GameModal status={gameStatus} onRestart={handleRestart} />
       
       <div 
-        className="flex flex-col items-center justify-center w-full max-w-md mx-auto"
+        className="flex flex-col items-center justify-center w-full max-w-md mx-auto p-4"
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
+        onTouchStart={(e) => {
+          const touch = e.touches[0];
+          setMouseStart([touch.clientX, touch.clientY]);
+        }}
+        onTouchEnd={(e) => {
+          if (!mouseStart) return;
+          const touch = e.changedTouches[0];
+          const deltaX = touch.clientX - mouseStart[0];
+          const deltaY = touch.clientY - mouseStart[1];
+          
+          if (Math.abs(deltaX) < 20 && Math.abs(deltaY) < 20) return;
+
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            move(deltaX > 0 ? 'right' : 'left');
+          } else {
+            move(deltaY > 0 ? 'down' : 'up');
+          }
+          
+          setMouseStart(null);
+        }}
+        onTouchCancel={() => setMouseStart(null)}
         ref={boardRef}
       >
-        <div className="mb-4">
+        <div className="mb-4 text-center">
           <h1 className="text-4xl font-bold mb-2">2048</h1>
           <div className="text-xl">점수: {score}</div>
         </div>
@@ -356,18 +397,28 @@ const Game2048 = () => {
                 <div
                   key={`cell-${rowIndex}-${colIndex}-${cell}`}
                   className={`
-                    w-16 h-16 m-1 flex items-center justify-center
+                    m-1 flex items-center justify-center
                     rounded-lg text-2xl font-bold
                     ${getColor(cell)} ${getTextColor(cell)}
                     transform transition-all duration-150 ease-in-out
                     ${isAnimating ? 'scale-95' : 'scale-100'}
                   `}
+                  style={{
+                    width: `${cellSize}px`,
+                    height: `${cellSize}px`,
+                    fontSize: `${cellSize * 0.4}px`
+                  }}
                 >
                   {cell !== 0 && cell}
                 </div>
               ))}
             </div>
           ))}
+        </div>
+        
+        <div className="mt-4 text-center text-gray-600">
+          <p className="hidden md:block">방향키로 이동</p>
+          <p className="md:hidden">화면을 스와이프하여 이동</p>
         </div>
       </div>
     </div>
