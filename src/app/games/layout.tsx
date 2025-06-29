@@ -9,8 +9,8 @@ export default function GamesLayout({
   children: React.ReactNode;
 }) {
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    // 스크롤이 맨 위에 있을 때만 새로고침 제스처 방지
-    if (window.scrollY === 0) {
+    // 스크롤이 맨 위에 있고 아래로 당기는 경우에만 새로고침 제스처 방지
+    if (window.scrollY === 0 && e instanceof TouchEvent && e.touches[0].clientY > 100) {
       e.preventDefault();
     }
   }, []);
@@ -23,9 +23,9 @@ export default function GamesLayout({
   }, [handleTouchMove]);
 
   return (
-    <div className="min-h-screen bg-background p-8 touch-pan-y">
+    <div className="min-h-screen bg-background p-8">
       <GameNavigation />
-      <main className="container mx-auto">
+      <main className="container mx-auto overflow-visible">
         {children}
       </main>
     </div>

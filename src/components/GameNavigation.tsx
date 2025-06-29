@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -14,6 +14,7 @@ type GameMenu = {
   name: string;
   path: string;
   description: string;
+  mobileHidden?: boolean;
 };
 
 const games: GameMenu[] = [
@@ -25,7 +26,8 @@ const games: GameMenu[] = [
   {
     name: '갤러그',
     path: '/games/galaga',
-    description: '적 우주선을 물리치세요!'
+    description: '적 우주선을 물리치세요!',
+    mobileHidden: true
   },
   {
     name: '오목',
@@ -37,6 +39,22 @@ const games: GameMenu[] = [
 
 const GameNavigation = () => {
   const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+
+  const visibleGames = games.filter(game => !isMobile || !game.mobileHidden);
 
   return (
     <div className="w-full bg-gray-900 text-white py-6">
@@ -50,7 +68,7 @@ const GameNavigation = () => {
           className="game-swiper"
           loop={true}
         >
-          {games.map((game) => (
+          {visibleGames.map((game) => (
             <SwiperSlide key={game.path}>
               <Link
                 href={game.path}
