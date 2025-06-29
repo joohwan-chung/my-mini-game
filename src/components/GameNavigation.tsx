@@ -3,6 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination } from 'swiper/modules';
+
+// Swiper styles
+import 'swiper/css';
+import 'swiper/css/pagination';
 
 type GameMenu = {
   name: string;
@@ -33,30 +39,40 @@ const GameNavigation = () => {
   const pathname = usePathname();
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-8">
-      <h1 className="text-3xl font-bold mb-6 text-center">미니게임 모음</h1>
-      <nav className="flex flex-wrap gap-4 justify-center">
-        {games.map((game) => (
-          <Link
-            key={game.path}
-            href={game.path}
-            className={`
-              relative px-6 py-3 rounded-lg transition-all
-              hover:bg-gray-100 dark:hover:bg-gray-800
-              ${pathname === game.path 
-                ? 'bg-gray-200 dark:bg-gray-700' 
-                : 'bg-white dark:bg-gray-900'}
-              group
-            `}
-          >
-            <div className="font-semibold">{game.name}</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {game.description}
-            </div>
-            <div className="absolute inset-0 rounded-lg ring-2 ring-transparent group-hover:ring-gray-300 dark:group-hover:ring-gray-600 transition-all" />
-          </Link>
-        ))}
-      </nav>
+    <div className="w-full bg-gray-900 text-white py-6">
+      <h1 className="text-2xl font-bold text-center mb-6">미니게임 모음</h1>
+      <div className="max-w-lg mx-auto px-4">
+        <Swiper
+          modules={[Pagination]}
+          spaceBetween={20}
+          slidesPerView={1}
+          pagination={{ clickable: true }}
+          className="game-swiper"
+          loop={true}
+        >
+          {games.map((game) => (
+            <SwiperSlide key={game.path}>
+              <Link
+                href={game.path}
+                className={`
+                  block rounded-lg transition-all
+                  ${pathname === game.path 
+                    ? 'bg-blue-600' 
+                    : 'bg-gray-800 hover:bg-gray-700'}
+                `}
+              >
+                <div className="p-6">
+                  <h2 className="text-xl font-bold mb-2">{game.name}</h2>
+                  <p className="text-gray-300 text-sm mb-4">{game.description}</p>
+                  <div className="text-sm text-blue-300">
+                    {pathname === game.path ? '현재 플레이 중' : '시작하기 →'}
+                  </div>
+                </div>
+              </Link>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
     </div>
   );
 };

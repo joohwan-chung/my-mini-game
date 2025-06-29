@@ -19,3 +19,18 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Swiper Customization */
+.game-swiper {
+  padding-bottom: 3rem !important;
+}
+
+.game-swiper .swiper-pagination-bullet {
+  background: white;
+  opacity: 0.5;
+}
+
+.game-swiper .swiper-pagination-bullet-active {
+  background: #3b82f6;
+  opacity: 1;
+}
