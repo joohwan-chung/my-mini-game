@@ -244,28 +244,28 @@ const Gomoku: React.FC<GomokuProps> = ({ boardSize = 15 }) => {
   };
 
   return (
-    <div className="flex flex-col items-center p-2 md:p-4">
+    <div className="flex flex-col items-center p-1 sm:p-2 md:p-4 min-h-screen">
       {/* 게임 상태 및 메뉴 */}
-      <div className="w-full max-w-md flex flex-col items-center gap-2 mb-4">
+      <div className="w-full max-w-md flex flex-col items-center gap-1 sm:gap-2 mb-2 sm:mb-4">
         {/* 승리 카운트 */}
-        <div className="flex items-center justify-center gap-6 w-full">
-          <div className="text-lg">
+        <div className="flex items-center justify-center gap-3 sm:gap-6 w-full">
+          <div className="text-sm sm:text-lg">
             ⚫ 흑돌 승: {winCounts.black}
           </div>
-          <div className="text-lg">
+          <div className="text-sm sm:text-lg">
             ⚪ 백돌 승: {winCounts.white}
           </div>
         </div>
 
         {/* 게임 모드 선택 */}
-        <div className="flex flex-wrap justify-center gap-2 w-full">
+        <div className="flex flex-wrap justify-center gap-1 sm:gap-2 w-full">
           <button
             onClick={() => {
               setGameMode('pvp');
               setShowColorSelect(false);
               initializeBoard();
             }}
-            className={`px-4 py-2 rounded flex-1 min-w-[120px] max-w-[200px] ${
+            className={`px-2 sm:px-4 py-1 sm:py-2 rounded text-sm sm:text-base flex-1 min-w-[100px] sm:min-w-[120px] max-w-[180px] sm:max-w-[200px] ${
               gameMode === 'pvp' 
                 ? 'bg-blue-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -275,7 +275,7 @@ const Gomoku: React.FC<GomokuProps> = ({ boardSize = 15 }) => {
           </button>
           <button
             onClick={() => setShowColorSelect(true)}
-            className={`px-4 py-2 rounded flex-1 min-w-[120px] max-w-[200px] ${
+            className={`px-2 sm:px-4 py-1 sm:py-2 rounded text-sm sm:text-base flex-1 min-w-[100px] sm:min-w-[120px] max-w-[180px] sm:max-w-[200px] ${
               gameMode === 'pvc' 
                 ? 'bg-blue-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -287,16 +287,16 @@ const Gomoku: React.FC<GomokuProps> = ({ boardSize = 15 }) => {
 
         {/* 돌 색상 선택 */}
         {showColorSelect && (
-          <div className="flex flex-wrap justify-center gap-2 w-full">
+          <div className="flex flex-wrap justify-center gap-1 sm:gap-2 w-full">
             <button
               onClick={() => startGameWithColor(1)}
-              className="px-4 py-2 bg-gray-800 text-white rounded flex-1 min-w-[120px] max-w-[200px]"
+              className="px-2 sm:px-4 py-1 sm:py-2 bg-gray-800 text-white rounded text-sm sm:text-base flex-1 min-w-[100px] sm:min-w-[120px] max-w-[180px] sm:max-w-[200px]"
             >
               흑돌 선택 (선공)
             </button>
             <button
               onClick={() => startGameWithColor(2)}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded flex-1 min-w-[120px] max-w-[200px]"
+              className="px-2 sm:px-4 py-1 sm:py-2 bg-gray-200 text-gray-800 rounded text-sm sm:text-base flex-1 min-w-[100px] sm:min-w-[120px] max-w-[180px] sm:max-w-[200px]"
             >
               백돌 선택 (후공)
             </button>
@@ -304,7 +304,7 @@ const Gomoku: React.FC<GomokuProps> = ({ boardSize = 15 }) => {
         )}
         
         {/* 현재 상태 */}
-        <div className="text-lg font-bold text-center">
+        <div className="text-sm sm:text-lg font-bold text-center">
           {winner 
             ? `${winner === 1 ? '⚫ 흑돌' : '⚪ 백돌'} 승리!` 
             : `현재 차례: ${currentPlayer === 1 ? '⚫ 흑돌' : '⚪ 백돌'}`}
@@ -313,19 +313,19 @@ const Gomoku: React.FC<GomokuProps> = ({ boardSize = 15 }) => {
         {/* 새 게임 버튼 */}
         <button
           onClick={initializeBoard}
-          className="px-6 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
+          className="px-4 sm:px-6 py-1 sm:py-2 text-white bg-blue-500 rounded hover:bg-blue-600 text-sm sm:text-base"
         >
           새 게임
         </button>
       </div>
 
       {/* 오목판 */}
-      <div className="relative bg-amber-100 p-4 rounded-lg shadow-lg">
+      <div className="relative bg-amber-100 p-2 sm:p-4 rounded-lg shadow-lg flex-1 flex items-center justify-center">
         <div 
           className="relative"
           style={{
-            width: 'min(80vw, 600px)',
-            aspectRatio: '1/1',
+            width: 'min(90vw, 85vh, 600px)',
+            height: 'min(90vw, 85vh, 600px)',
           }}
         >
           {/* 바둑판 배경 */}
@@ -377,8 +377,8 @@ const Gomoku: React.FC<GomokuProps> = ({ boardSize = 15 }) => {
                       style={{
                         left: x,
                         top: y,
-                        width: '20px',
-                        height: '20px',
+                        width: 'clamp(16px, 4vw, 20px)',
+                        height: 'clamp(16px, 4vw, 20px)',
                         transform: 'translate(-50%, -50%)',
                         zIndex: 10,
                       }}
@@ -418,8 +418,8 @@ const Gomoku: React.FC<GomokuProps> = ({ boardSize = 15 }) => {
                   style={{
                     left: `${(colIndex / (boardSize - 1)) * 100}%`,
                     top: `${(rowIndex / (boardSize - 1)) * 100}%`,
-                    width: '20px',
-                    height: '20px',
+                    width: 'clamp(20px, 5vw, 24px)',
+                    height: 'clamp(20px, 5vw, 24px)',
                     transform: 'translate(-50%, -50%)',
                   }}
                 />
