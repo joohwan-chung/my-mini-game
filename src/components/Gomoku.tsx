@@ -244,7 +244,7 @@ const Gomoku: React.FC<GomokuProps> = ({ boardSize = 15 }) => {
   };
 
   return (
-    <div className="flex flex-col items-center p-1 sm:p-2 md:p-4 min-h-screen">
+    <div className="flex flex-col items-center p-1 sm:p-2 md:p-4">
       {/* 게임 상태 및 메뉴 */}
       <div className="w-full max-w-md flex flex-col items-center gap-1 sm:gap-2 mb-2 sm:mb-4">
         {/* 승리 카운트 */}
@@ -320,12 +320,18 @@ const Gomoku: React.FC<GomokuProps> = ({ boardSize = 15 }) => {
       </div>
 
       {/* 오목판 */}
-      <div className="relative bg-amber-100 p-2 sm:p-4 rounded-lg shadow-lg flex-1 flex items-center justify-center">
-        <div 
+      <div
+        className="bg-amber-100 p-2 sm:p-4 rounded-lg shadow-lg w-full max-w-[600px] overflow-x-auto overflow-y-auto"
+        style={{ margin: '0 auto' }}
+      >
+        <div
           className="relative"
           style={{
-            width: 'min(90vw, 85vh, 600px)',
-            height: 'min(90vw, 85vh, 600px)',
+            width: '100%',
+            aspectRatio: '1/1',
+            minWidth: '320px',
+            maxWidth: '600px',
+            margin: '0 auto',
           }}
         >
           {/* 바둑판 배경 */}
